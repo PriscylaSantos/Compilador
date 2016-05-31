@@ -1,0 +1,284 @@
+import java_cup.runtime.*;
+import erros.ListaErros;
+
+/*CODIGO ADICIONAL*/
+parser code
+{:
+  public void syntax_error(Symbol s)
+  {
+    defErro(s.left, s.right);
+  }
+
+  public void defErro(int linha, int coluna, String texto)
+  {
+    ((scanner.Scanner) getScanner()).defErro(linha,coluna,texto);
+  }
+
+  public void defErro(int linha, int coluna)
+  {
+    ((scanner.Scanner) getScanner()).defErro(linha,coluna);
+  }
+
+  public void defErro(String texto)
+  {
+    ((scanner.Scanner) getScanner()).defErro(texto);
+  }
+:};
+
+/********************TERMINAIS********************/
+terminal KWPROGRAMA, KWFINAL,KWCLASS,KWVOID;
+terminal IDENTIFICADOR, FECHA_CHAVE,ABRE_CHAVE;
+terminal OP_RECEBE,OP_PONTOEVIRGULA;
+terminal OP_VIRGULA,CHARCONST;
+terminal ABRE_PARENTESES,FECHA_PARENTESES;
+terminal ABRE_COLCHETE, FECHA_COLCHETE;
+terminal KWIF, KWWHILE, KWRETURN, KWREAD, KWPRINT, KWELSE;
+terminal OP_IGUAL, OP_DIFERENTE, OP_MAIOR, OP_MAIORIGUAL, OP_MENOR, OP_MENORIGUAL;
+terminal OP_MENOS;
+terminal KWNEW;
+terminal OP_PONTO;
+terminal OP_MAIS;
+terminal OP_MULT, OP_DIV, OP_MOD, INTEIRO, FLOAT;
+
+/********************NÃƒO TERMINAIS********************/
+
+non terminal program, lista_um, lista_dois ,vardecl ,classdecl, methoddecl, literal;
+non terminal constdecl, type;
+non terminal lista_tres;
+non terminal lista_quatro;
+non terminal lista_cinco, lista_seis,formpars;
+non terminal lista_sete;
+non terminal lista_oito ;
+non terminal statement, lista_nove, block;
+non terminal expr,designador,actpars,condition,lista_dez, lista_onze, lista_doze;
+non terminal lista_treze, lista_quatorze;
+non terminal relop;
+non terminal lista_quinze, lista_dezesseis, addop, term;
+non terminal lista_dezessete,factor, mulop;
+non terminal lista_dezoito, lista_dezenove;
+non terminal lista_vinte,listaAAAA,listaBBB;
+
+precedence left KWELSE;
+
+/*********************DESTRINCHANDO PROGRAM***************************/
+
+program ::= 
+  KWPROGRAMA IDENTIFICADOR lista_um ABRE_CHAVE lista_dois FECHA_CHAVE
+  | error {: parser.defErro("erro ao declarar PROGRAMA"); :};
+
+lista_um ::=
+  constdecl lista_um
+  | vardecl lista_um
+  | classdecl lista_um
+  | ;
+
+lista_dois ::=
+  methoddecl lista_dois
+  | ;
+
+/**********************DESTRINCHANDO CONSTDECL**********************/
+
+constdecl ::=
+  KWFINAL type IDENTIFICADOR OP_RECEBE listaAAAA OP_PONTOEVIRGULA
+  |  KWFINAL type IDENTIFICADOR OP_RECEBE listaAAAA error {: parser.defErro("erro em NEW"); :};
+
+ listaAAAA ::= 
+   literal
+   | CHARCONST;
+
+/***********************DESTRINCHANDO VARDECL***********************/
+
+vardecl ::=
+  type IDENTIFICADOR lista_tres OP_PONTOEVIRGULA
+  | error {: parser.defErro("erro em DECLARACAO DE VARIAVEL"); :};
+
+lista_tres ::=
+  OP_VIRGULA IDENTIFICADOR lista_tres 
+  | ;
+
+/**********************DESTRINCHANDO CLASSDECL**********************/
+
+classdecl ::= 
+  KWCLASS IDENTIFICADOR ABRE_CHAVE lista_quatro FECHA_CHAVE;
+
+lista_quatro ::=
+  vardecl lista_quatro
+  | ;
+
+/**********************DESTRINCHANDO METHODDECL**********************/
+
+methoddecl ::=
+  type IDENTIFICADOR ABRE_PARENTESES lista_cinco FECHA_PARENTESES lista_seis block
+  | KWVOID IDENTIFICADOR ABRE_PARENTESES lista_cinco FECHA_PARENTESES lista_seis block
+  | error {: parser.defErro("erro em DECLARACAO DE METODO"); :};
+
+lista_cinco ::=
+  formpars
+  | ;
+
+lista_seis ::= 
+  vardecl lista_seis
+  | ;
+
+/**********************DESTRINCHANDO FORMPARS**********************/
+
+formpars ::=
+  type IDENTIFICADOR lista_sete;
+
+lista_sete ::=
+  OP_VIRGULA formpars
+  | ;
+
+/**********************DESTRINCHANDO TYPE**********************/
+
+type ::=
+  IDENTIFICADOR lista_oito;
+
+lista_oito ::=
+  ABRE_COLCHETE FECHA_COLCHETE
+  | ;
+
+/**********************DESTRINCHANDO BLOCK**********************/
+
+block ::=
+  ABRE_CHAVE lista_nove FECHA_CHAVE;
+
+lista_nove ::=
+  statement lista_nove
+  | ;
+
+/**********************DESTRINCHANDO STATEMENT**********************/
+
+statement ::=
+  designador listaBBB OP_PONTOEVIRGULA
+  | KWIF ABRE_PARENTESES condition FECHA_PARENTESES statement lista_dez
+  | KWWHILE ABRE_PARENTESES condition FECHA_PARENTESES statement
+  | KWRETURN lista_onze OP_PONTOEVIRGULA
+  | KWREAD ABRE_PARENTESES designador FECHA_PARENTESES OP_PONTOEVIRGULA
+  | KWPRINT ABRE_PARENTESES expr lista_doze FECHA_PARENTESES OP_PONTOEVIRGULA
+  | block
+  | OP_PONTOEVIRGULA
+  | KWIF error {: parser.defErro("Falta  abrir parenteses na estrutura IF"); :} FECHA_PARENTESES statement lista_dez/* if 1 > 3 ) */
+  | KWIF ABRE_PARENTESES error {: parser.defErro("erro em CONDICAO na estrutura IF"); :}FECHA_PARENTESES statement lista_dez /* if (1  3 ) ou if (3 > 5 */
+  | KWWHILE error {: parser.defErro("Falta abrir parenteses na estrutura WHILE"); :} FECHA_PARENTESES statement
+  | KWWHILE ABRE_PARENTESES error {: parser.defErro("erro em CONDICAO na estrutura WHILE"); :} FECHA_PARENTESES statement
+  | error {: parser.defErro("erro ao produzir as estruturas IF ou  WHILE"); :}  ABRE_PARENTESES condition FECHA_PARENTESES statement lista_dez /*  1 > 3 ) */
+  | KWREAD error {: parser.defErro("Falta  abrir parenteses em READ"); :} designador FECHA_PARENTESES OP_PONTOEVIRGULA
+  | KWREAD ABRE_PARENTESES error {: parser.defErro("Erro ao passar os parametros em READ"); :} FECHA_PARENTESES OP_PONTOEVIRGULA
+  | KWREAD ABRE_PARENTESES designador error {: parser.defErro("Erro em READ"); :}  OP_PONTOEVIRGULA
+  | error {: parser.defErro("erro em STATEMENT"); :};
+
+listaBBB ::=
+  OP_RECEBE expr 
+  | actpars;
+
+lista_dez ::=
+  KWELSE statement
+  | ;
+
+lista_onze ::=
+  expr
+  | ;
+
+lista_doze ::=
+  OP_VIRGULA literal 
+  | ;
+
+/**********************DESTRINCHANDO ACTPARS**********************/
+
+actpars ::=
+  ABRE_PARENTESES lista_treze FECHA_PARENTESES;/* DÁ ERRO*/
+
+lista_treze ::=
+  expr lista_quatorze
+  | ;
+
+lista_quatorze ::=
+  OP_VIRGULA lista_treze 
+  | ;
+
+/**********************DESTRINCHANDO CONDITION**********************/
+
+condition ::=
+  expr relop expr
+  | expr error {: parser.defErro("erro ao produzir CONDITION"); :} expr;
+
+/**********************DESTRINCHANDO RELOP**********************/
+
+relop ::=
+  OP_IGUAL
+  | OP_DIFERENTE
+  | OP_MAIOR
+  | OP_MAIORIGUAL
+  | OP_MENOR
+  | OP_MENORIGUAL;
+
+/**********************DESTRINCHANDO EXPR**********************/
+
+expr ::=
+  lista_quinze term lista_dezesseis
+  | error {: parser.defErro("erro em expressao"); :};
+
+
+lista_quinze ::= /*DÃ� ERRO*/
+  OP_MENOS 
+  | ;
+
+lista_dezesseis ::=
+  addop term lista_dezesseis
+  | ;
+
+/**********************DESTRINCHANDO TERM**********************/
+
+term ::=
+  factor lista_dezessete;
+
+lista_dezessete ::=
+  mulop term
+  | ;
+
+/**********************DESTRINCHANDO FACTOR**********************/
+
+factor ::=
+  designador lista_dezoito
+  |literal
+  |CHARCONST
+  |KWNEW IDENTIFICADOR lista_dezenove
+  |ABRE_PARENTESES expr FECHA_PARENTESES;
+
+lista_dezoito ::=
+  actpars
+  | ;
+
+lista_dezenove ::=
+  ABRE_COLCHETE expr FECHA_COLCHETE
+  | ;
+
+/**********************DESTRINCHANDO DESIGNADOR**********************/
+
+designador ::=
+  IDENTIFICADOR lista_vinte;
+
+lista_vinte ::=
+  OP_PONTO IDENTIFICADOR lista_vinte
+  | ABRE_COLCHETE expr FECHA_COLCHETE lista_vinte
+  | ;
+
+/**********************DESTRINCHANDO ADDOP**********************/
+
+addop ::=
+  OP_MAIS
+  | OP_MENOS;
+
+
+/**********************DESTRINCHANDO MULOP**********************/
+
+mulop ::=
+  OP_MULT
+  | OP_DIV
+  | OP_MOD;
+
+/**********************DESTRINCHANDO LITERAL**********************/
+literal ::=
+  INTEIRO
+  | FLOAT ;
